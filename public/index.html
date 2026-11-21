@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Food Cost – Control de costos de ventas y operaciones</title>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--g:#1f7a4d;--g2:#155c39;--gl:#e7f5ed;--y:#b7791f;--yl:#fdf3dc;--r:#c53030;--rl:#fde8e8;--bg:#f3f6f4;--tx:#1d2a24;--mu:#66756e;--bd:#e1e7e4}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.4}
+header.top{background:linear-gradient(135deg,#1f7a4d,#17633e);color:#fff;padding:18px 20px 0}
+.hrow{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto}
+h1{margin:0;font-size:22px;letter-spacing:-.01em}
+.sub{opacity:.85;font-size:13px;margin-top:3px}
+.cfg{display:flex;gap:16px;flex-wrap:wrap;align-items:center;background:rgba(255,255,255,.13);padding:10px 14px;border-radius:12px}
+.cfg label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer}
+.cfg input[type=number]{width:72px;border:0}
+.cfg input[type=checkbox]{width:18px;height:18px;accent-color:#9be3bb}
+.cfg .btn{background:rgba(255,255,255,.18);color:#fff;border-color:transparent}
+nav.tabs{max-width:1200px;margin:14px auto 0;display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{background:transparent;border:0;color:#d4efe0;padding:10px 16px;border-radius:10px 10px 0 0;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+nav.tabs button:hover{color:#fff}
+nav.tabs button.on{background:var(--bg);color:var(--g2)}
+main{max-width:1200px;margin:0 auto;padding:20px 16px 48px}
+section{display:none}section.on{display:block}
+.card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(20,40,30,.04)}
+.card h2{font-size:16px;margin:0 0 4px}
+.card .hint{color:var(--mu);font-size:12.5px;margin:0 0 12px}
+.chead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi{margin:0}
+.kpi .lb{color:var(--mu);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.kpi .v{font-size:25px;font-weight:700;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--mu)}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap;vertical-align:middle}
+th{font-size:11.5px;color:var(--mu);font-weight:600;background:#f8faf9;text-transform:uppercase;letter-spacing:.03em}
+.n{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:700;background:#f8faf9;border-bottom:0}
+tbody tr:hover{background:#fbfdfc}
+input,select{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx)}
+input:focus,select:focus{outline:2px solid #a8dcc0;border-color:var(--g)}
+input[type=number]{width:92px;text-align:right}
+input.wide{width:100%;min-width:160px}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.tag.ok{background:var(--gl);color:var(--g2)}.tag.warn{background:var(--yl);color:#8a5a12}.tag.bad{background:var(--rl);color:var(--r)}.tag.neu{background:#eef1f0;color:var(--mu)}
+.neg{color:var(--r);font-weight:600}.posv{color:var(--g2)}
+.btn{font:inherit;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:#fff;color:var(--tx);cursor:pointer}
+.btn:hover{filter:brightness(.97)}
+.btn.pri{background:var(--g);border-color:var(--g);color:#fff}
+.btn.del{color:var(--r)}
+.btn.x{padding:4px 9px;color:var(--mu)}.btn.x:hover{color:var(--r);border-color:#f2c6c6}
+.alert{border-radius:14px;padding:14px 18px;margin-bottom:16px;border:1px solid;display:flex;gap:12px;align-items:flex-start}
+.alert .ic{font-size:20px;line-height:1}
+.alert.bad{background:var(--rl);border-color:#f3c3c3;color:#7b1f1f}
+.alert.ok{background:var(--gl);border-color:#bfe3cf;color:#134e31}
+.alert.neu{background:#fff;border-color:var(--bd);color:var(--mu)}
+.alert ol{margin:6px 0 0;padding-left:20px}
+.bars{margin-top:8px}
+.brow{display:grid;grid-template-columns:150px 1fr 64px;gap:12px;align-items:center;margin:12px 0}
+.brow .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:24px;background:#eef2f0;border-radius:7px}
+.fill{height:100%;border-radius:7px;transition:width .2s}
+.fill.ok{background:#2f9e63}.fill.warn{background:#e0a234}.fill.bad{background:#d64545}
+.mline{position:absolute;top:-5px;bottom:-5px;width:2px;background:#1d2a24;border-radius:2px}
+.mlab{position:relative;height:18px;margin-left:162px;margin-right:76px}
+.mlab span{position:absolute;transform:translateX(-50%);font-size:11.5px;font-weight:700;color:var(--tx);white-space:nowrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.res .line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--bd)}
+.res .line:last-child{border-bottom:0}
+.res .line b{font-variant-numeric:tabular-nums}
+.res .big{font-size:30px;font-weight:700;text-align:center;margin:4px 0 2px}
+.fields{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px}
+.fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mu);font-weight:600}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.minibar{display:inline-block;width:60px;height:6px;background:#eef2f0;border-radius:3px;vertical-align:middle;margin-left:6px;overflow:hidden}
+.minibar b{display:block;height:100%;background:var(--g)}
+.muted{color:var(--mu)}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}.brow{grid-template-columns:100px 1fr 56px}.mlab{margin-left:112px;margin-right:68px}h1{font-size:19px}}
+
+.login{position:fixed;inset:0;background:linear-gradient(135deg,#1f7a4d,#0f4a2d);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.login .card{width:100%;max-width:380px;margin:0}
+.login h1{color:var(--g2);font-size:24px}
+.login form{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.login label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mu);font-weight:600}
+.login input{width:100%;padding:9px 10px}
+.login .msg{font-size:13px;min-height:18px;color:var(--r)}
+.hidden{display:none!important}
+.st{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
+.st.err{background:#fde8e8;color:#c53030}
+.user{font-size:12px;opacity:.9}
+.loading{padding:40px;text-align:center;color:var(--mu)}
+</style>
+</head>
+<body>
+<!-- ============ INICIO DE SESIÓN ============ -->
+<div class="login hidden" id="login">
+  <div class="card">
+    <h1>Food Cost</h1>
+    <p class="hint">Control de costos de ventas y operaciones. Ingresa con el usuario que te asignó el administrador.</p>
+    <form id="loginForm">
+      <label>Correo<input type="email" id="lEmail" required autocomplete="username"></label>
+      <label>Contraseña<input type="password" id="lPass" required autocomplete="current-password"></label>
+      <button class="btn pri" type="submit" id="lBtn">Ingresar</button>
+      <div class="msg" id="lMsg"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header class="top">
+  <div class="hrow">
+    <div>
+      <h1>Food Cost</h1>
+      <div class="sub">Control de costos de ventas y operaciones · Moneda S/ · IGV 18%</div>
+    </div>
+    <div class="cfg">
+      <label>Meta de Food Cost % <input type="number" id="meta" min="1" max="100" step="0.5"></label>
+      <label><input type="checkbox" id="igv"> Precios incluyen IGV (18%)</label>
+      <span class="st" id="st">Cargando…</span>
+    </div>
+  </div>
+  <div class="hrow" style="margin-top:10px;justify-content:flex-end;gap:8px">
+    <span class="user" id="uMail"></span>
+    <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent" data-act="export" title="Descargar un respaldo en JSON">Exportar</button>
+    <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent" data-act="import" title="Reemplazar los datos con un respaldo JSON">Importar</button>
+    <input type="file" id="impFile" accept=".json,application/json" class="hidden">
+    <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent" data-act="reload">Recargar</button>
+    <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent" data-act="reset" title="Borra todo y carga los datos de ejemplo">Restablecer ejemplo</button>
+    <button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent" data-act="logout">Salir</button>
+  </div>
+  <nav class="tabs">
+    <button data-tab="resumen">Resumen</button>
+    <button data-tab="insumos">Insumos</button>
+    <button data-tab="recetas">Recetas</button>
+    <button data-tab="ventas">Ventas y consumo real</button>
+  </nav>
+</header>
+<main>
+  <section id="resumen"><div class="loading">Cargando datos…</div></section>
+  <section id="insumos"></section>
+  <section id="recetas"></section>
+  <section id="ventas"></section>
+</main>
+</div>
+
+<script>
+/* ================== DATOS DE EJEMPLO ================== */
+const UNIDADES=['kg','g','L','ml','unid','atado','lata'];
+function ejemplo(){
+  const ins=[
+    ['i1','Lomo fino','kg',48,12],['i2','Cebolla roja','kg',3.5,10],['i3','Tomate','kg',3,8],
+    ['i4','Papa amarilla','kg',3.2,15],['i5','Arroz','kg',4.2,0],['i6','Ají amarillo','kg',8,20],
+    ['i7','Pescado (corvina)','kg',38,35],['i8','Limón','kg',4.5,50],['i9','Culantro','kg',8,30],
+    ['i10','Pechuga de gallina','kg',14,25],['i11','Pan de molde','kg',9,5],['i12','Leche evaporada','L',7.5,0],
+    ['i13','Maíz morado','kg',6,0],['i14','Piña','kg',3.5,40],['i15','Azúcar','kg',3.8,0],['i16','Aceite vegetal','L',9,0]
+  ];
+  const rec=[
+    ['r1','Lomo saltado',38,120,[['i1',.18],['i2',.08],['i3',.08],['i4',.2],['i5',.12],['i6',.01],['i16',.03],['i9',.005]]],
+    ['r2','Ceviche clásico',42,90,[['i7',.18],['i8',.1],['i2',.06],['i6',.01],['i9',.005]]],
+    ['r3','Ají de gallina',30,80,[['i10',.15],['i6',.04],['i11',.04],['i12',.08],['i4',.15],['i5',.12],['i16',.02],['i2',.05]]],
+    ['r4','Chicha morada',8,200,[['i13',.05],['i14',.05],['i15',.04],['i8',.01]]]
+  ];
+  const inv={i1:[5,25,4],i2:[4,20,2],i3:[2,10,1.5],i4:[10,40,7],i5:[20,25,21],i6:[1,8,2],i7:[0,30,3],i8:[5,20,2],
+    i9:[.3,1.5,.2],i10:[3,15,1.5],i11:[1,3,.7],i12:[2,6,1.6],i13:[2,10,2],i14:[3,18,3],i15:[5,10,7],i16:[3,5,2.5]};
+  const M={},id=k=>M[k]||(M[k]=uid());
+  const o={meta:30,igv:true,insumos:[],recetas:[],ventas:{},inv:{}};
+  ins.forEach(([k,nombre,unidad,costo,merma])=>{o.insumos.push({id:id(k),nombre,unidad,costo,merma});const [ini,compras,fin]=inv[k];o.inv[id(k)]={ini,compras,fin};});
+  rec.forEach(([k,nombre,precio,u,items])=>{o.recetas.push({id:id(k),nombre,precio,items:items.map(([ik,cant])=>({id:uid(),insumoId:id(ik),cant}))});o.ventas[id(k)]=u;});
+  return o;
+}
+let S={meta:30,igv:true,insumos:[],recetas:[],ventas:{},inv:{},tab:'resumen',sel:null};
+
+/* ================== UTILIDADES ================== */
+const $=s=>document.querySelector(s);
+const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);});
+const num=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0;};
+const nf=(v,d=2)=>(isFinite(v)?v:0).toLocaleString('es-PE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=v=>(v<0?'−':'')+'S/ '+nf(Math.abs(v));
+const smoney=v=>(v>0.004?'+':v<-0.004?'−':'')+'S/ '+nf(Math.abs(v));
+const pct=v=>nf(v*100,1)+'%';
+const sq=(v,d=3)=>(v>0.0004?'+':v<-0.0004?'−':'')+nf(Math.abs(v),d);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setO(k,txt,cls){const el=document.querySelector(`[data-o="${k}"]`);if(!el)return;el.textContent=txt;if(cls!==undefined)el.className=cls;}
+function setH(k,html){const el=document.querySelector(`[data-o="${k}"]`);if(el)el.innerHTML=html;}
+
+/* ================== CÁLCULOS ================== */
+const insMap=()=>Object.fromEntries(S.insumos.map(i=>[i.id,i]));
+const fm=i=>Math.min(Math.max(num(i.merma),0),99)/100;
+const aprov=i=>num(i.costo)/(1-fm(i));
+const meta=()=>num(S.meta)/100;
+const neto=r=>S.igv?num(r.precio)/1.18:num(r.precio);
+function costoRec(r,m=insMap()){return r.items.reduce((s,it)=>{const i=m[it.insumoId];return s+(i?num(it.cant)*aprov(i):0);},0);}
+function fcRec(r,m){const n=neto(r);return n>0?costoRec(r,m)/n:0;}
+const sug=c=>meta()>0?c/meta()*(S.igv?1.18:1):0;
+function est(fc){const m=meta();if(fc<=m)return 'ok';if(fc<=m+0.05)return 'warn';return 'bad';}
+const EST={ok:'En meta',warn:'Cerca de la meta',bad:'Sobre la meta'};
+const tag=s=>`<span class="tag ${s}">${EST[s]}</span>`;
+
+function consumo(){
+  const m=insMap(),teo={};
+  S.recetas.forEach(r=>{const u=num(S.ventas[r.id]);r.items.forEach(it=>{const i=m[it.insumoId];if(!i)return;teo[i.id]=(teo[i.id]||0)+u*num(it.cant)/(1-fm(i));});});
+  return S.insumos.map(i=>{const v=S.inv[i.id]||{};const real=num(v.ini)+num(v.compras)-num(v.fin);const t=teo[i.id]||0;const c=num(i.costo);
+    return {i,real,teo:t,dq:real-t,realS:real*c,teoS:t*c,dS:(real-t)*c};});
+}
+function totales(){
+  const m=insMap();
+  const vn=S.recetas.reduce((s,r)=>s+num(S.ventas[r.id])*neto(r),0);
+  const cons=consumo();
+  const teoS=cons.reduce((s,x)=>s+x.teoS,0),realS=cons.reduce((s,x)=>s+x.realS,0);
+  const fcT=vn>0?teoS/vn:0,fcR=vn>0?realS/vn:0;
+  return {m,vn,cons,teoS,realS,fcT,fcR,desv:fcR-fcT,margen:vn-realS,margenP:vn>0?(vn-realS)/vn:0};
+}
+
+/* ================== RESUMEN ================== */
+function renderResumen(){
+  if(!S.insumos.length&&!S.recetas.length){$('#resumen').innerHTML=`<div class="card" style="text-align:center;padding:36px 18px"><h2>La base de datos está vacía</h2><p class="hint">Puedes cargar los datos de ejemplo (16 insumos y 4 platos) o empezar desde cero en las pestañas Insumos y Recetas.</p><button class="btn pri" data-act="seed">Cargar datos de ejemplo</button></div>`;return;}
+  const T=totales(),dp=T.desv*100;
+  const top=T.cons.filter(x=>x.dS>0.005).sort((a,b)=>b.dS-a.dS).slice(0,3);
+  const topHtml=top.length?`<ol>${top.map(x=>`<li><b>${esc(x.i.nombre)}</b>: ${sq(x.dq)} ${esc(x.i.unidad)} sobre lo teórico (${smoney(x.dS)})</li>`).join('')}</ol>`:'';
+  let alerta;
+  if(T.vn<=0) alerta=`<div class="alert neu"><div class="ic">ℹ️</div><div>Registra unidades vendidas en <b>Ventas y consumo real</b> para comparar el consumo real con el teórico.</div></div>`;
+  else if(dp>1) alerta=`<div class="alert bad"><div class="ic">⚠️</div><div><b>Alerta: el consumo real supera al teórico en ${nf(dp,1)} puntos de food cost</b> (tolerancia: 1 punto). Pérdida estimada: ${money(T.realS-T.teoS)}.<br>Insumos con mayor desvío:${topHtml||' —'}</div></div>`;
+  else alerta=`<div class="alert ok"><div class="ic">✅</div><div><b>Consumo bajo control:</b> la diferencia entre FC real y teórico es de ${nf(dp,1)} puntos (tolerancia: 1 punto).${top.length?`<br>Insumos a vigilar:${topHtml}`:''}</div></div>`;
+
+  const sR=est(T.fcR),sT=est(T.fcT),sD=dp>1?'bad':dp>0.5?'warn':'ok';
+  const kpis=`<div class="kpis">
+    <div class="card kpi"><div class="lb">Ventas netas</div><div class="v">${money(T.vn)}</div><div class="s">${S.igv?'Sin IGV':'Precios sin IGV'}</div></div>
+    <div class="card kpi"><div class="lb">FC teórico</div><div class="v">${pct(T.fcT)}</div><div class="s">${money(T.teoS)} · <span class="tag ${sT}">${EST[sT]}</span></div></div>
+    <div class="card kpi"><div class="lb">FC real</div><div class="v">${pct(T.fcR)}</div><div class="s">${money(T.realS)} · <span class="tag ${sR}">${EST[sR]}</span></div></div>
+    <div class="card kpi"><div class="lb">Desviación real vs teórico</div><div class="v ${dp>1?'neg':''}">${dp>=0?'+':'−'}${nf(Math.abs(dp),1)} pts</div><div class="s">${smoney(T.realS-T.teoS)} · <span class="tag ${sD}">${dp>1?'Fuera de tolerancia':'Dentro de tolerancia'}</span></div></div>
+    <div class="card kpi"><div class="lb">Margen bruto real</div><div class="v">${money(T.margen)}</div><div class="s">${pct(T.margenP)} de las ventas netas</div></div>
+  </div>`;
+
+  const platos=S.recetas.map(r=>{const c=costoRec(r,T.m),n=neto(r),fc=n>0?c/n:0,u=num(S.ventas[r.id]);return {r,c,n,fc,u,s:est(fc)};});
+  const mx=Math.max(meta()*1.5,...platos.map(p=>p.fc*1.1),0.1);
+  const mpos=meta()/mx*100;
+  const bars=platos.length?`<div class="mlab"><span style="left:${mpos}%">Meta ${nf(num(S.meta),1)}%</span></div>`+platos.map(p=>`
+    <div class="brow"><div class="nm" title="${esc(p.r.nombre)}">${esc(p.r.nombre)}</div>
+    <div class="track"><div class="fill ${p.s}" style="width:${Math.min(p.fc/mx*100,100)}%"></div><div class="mline" style="left:${mpos}%"></div></div>
+    <div class="n"><b>${pct(p.fc)}</b></div></div>`).join('')+
+    `<div class="legend"><span><i style="background:#2f9e63"></i>≤ meta</span><span><i style="background:#e0a234"></i>hasta 5 pts sobre la meta</span><span><i style="background:#d64545"></i>más de 5 pts sobre la meta</span></div>`
+    :'<p class="muted">No hay recetas.</p>';
+
+  const tv=platos.reduce((a,p)=>({u:a.u+p.u,v:a.v+p.u*p.n,c:a.c+p.u*p.c}),{u:0,v:0,c:0});
+  const tabla=`<div class="tw"><table><thead><tr><th>Plato</th><th class="n">Precio venta</th><th class="n">Precio neto</th><th class="n">Costo porción</th><th class="n">Food cost</th><th class="n">Margen unit.</th><th class="n">Unid. vendidas</th><th class="n">Venta neta</th><th class="n">Costo teórico</th><th class="n">Precio sugerido</th><th>Estado</th></tr></thead><tbody>
+    ${platos.map(p=>`<tr><td><b>${esc(p.r.nombre)}</b></td><td class="n">${money(num(p.r.precio))}</td><td class="n">${money(p.n)}</td><td class="n">${money(p.c)}</td><td class="n">${pct(p.fc)}</td><td class="n">${money(p.n-p.c)}</td><td class="n">${nf(p.u,0)}</td><td class="n">${money(p.u*p.n)}</td><td class="n">${money(p.u*p.c)}</td><td class="n"><b>${money(sug(p.c))}</b></td><td>${tag(p.s)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td>Total</td><td></td><td></td><td></td><td class="n">${pct(tv.v>0?tv.c/tv.v:0)}</td><td></td><td class="n">${nf(tv.u,0)}</td><td class="n">${money(tv.v)}</td><td class="n">${money(tv.c)}</td><td></td><td></td></tr></tfoot></table></div>
+    <p class="hint" style="margin-top:10px">Precio sugerido = costo por porción ÷ meta${S.igv?' × 1.18 (incluye IGV, comparable con tu precio de carta)':''}.</p>`;
+
+  $('#resumen').innerHTML=alerta+kpis+
+    `<div class="card"><h2>Food cost por plato</h2><p class="hint">Food cost teórico de cada receta frente a la meta de ${nf(num(S.meta),1)}%.</p><div class="bars">${bars}</div></div>`+
+    `<div class="card"><h2>Detalle por plato</h2><p class="hint">Rentabilidad teórica según la ficha de receta y las ventas registradas.</p>${tabla}</div>`;
+}
+
+/* ================== INSUMOS ================== */
+function usos(id){return S.recetas.filter(r=>r.items.some(it=>it.insumoId===id)).length;}
+function renderInsumos(){
+  const rows=S.insumos.map(i=>`<tr>
+    <td><input class="wide" data-ins="${i.id}" data-f="nombre" value="${esc(i.nombre)}"></td>
+    <td><select data-ins="${i.id}" data-f="unidad">${(UNIDADES.includes(i.unidad)?UNIDADES:[i.unidad,...UNIDADES]).map(u=>`<option ${u===i.unidad?'selected':''}>${esc(u)}</option>`).join('')}</select></td>
+    <td class="n"><input type="number" step="0.01" min="0" data-ins="${i.id}" data-f="costo" value="${i.costo}"></td>
+    <td class="n"><input type="number" step="1" min="0" max="99" data-ins="${i.id}" data-f="merma" value="${i.merma}"></td>
+    <td class="n"><b data-o="ap-${i.id}"></b></td>
+    <td class="n"><span data-o="rd-${i.id}"></span></td>
+    <td class="n muted">${usos(i.id)}</td>
+    <td><button class="btn x" data-act="delIns" data-id="${i.id}" title="Eliminar insumo">✕</button></td></tr>`).join('');
+  $('#insumos').innerHTML=`<div class="card"><div class="chead"><div><h2>Insumos</h2><p class="hint">Costo aprovechable = costo de compra ÷ (1 − % merma). Es el costo real de cada unidad que llega al plato.</p></div>
+    <button class="btn pri" data-act="addIns">+ Agregar insumo</button></div>
+    <div class="tw"><table><thead><tr><th>Insumo</th><th>Unidad</th><th class="n">Costo compra (S/)</th><th class="n">% Merma</th><th class="n">Costo aprovechable</th><th class="n">Rendimiento</th><th class="n">En recetas</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="muted">Sin insumos.</td></tr>'}</tbody></table></div></div>`;
+  updateInsumos();
+}
+function updateInsumos(){S.insumos.forEach(i=>{setO('ap-'+i.id,money(aprov(i))+' / '+i.unidad);setO('rd-'+i.id,pct(1-fm(i)));});}
+
+/* ================== RECETAS ================== */
+function curRec(){let r=S.recetas.find(r=>r.id===S.sel);if(!r&&S.recetas.length){r=S.recetas[0];S.sel=r.id;}return r;}
+function renderRecetas(){
+  const r=curRec();
+  const sel=`<div class="toolbar"><label class="muted" style="font-weight:600">Receta</label>
+    <select id="recSel">${S.recetas.map(x=>`<option value="${x.id}" ${r&&x.id===r.id?'selected':''}>${esc(x.nombre)}</option>`).join('')}</select>
+    <button class="btn pri" data-act="addRec">+ Nueva receta</button>${r?'<button class="btn del" data-act="delRec">Eliminar receta</button>':''}</div>`;
+  if(!r){$('#recetas').innerHTML=`<div class="card">${sel}<p class="muted">No hay recetas. Crea una nueva.</p></div>`;return;}
+  const opts=id=>S.insumos.map(i=>`<option value="${i.id}" ${i.id===id?'selected':''}>${esc(i.nombre)}</option>`).join('');
+  const rows=r.items.map((it,k)=>`<tr>
+    <td><select data-item="${k}" data-f="insumoId">${S.insumos.some(i=>i.id===it.insumoId)?'':'<option value="">— eliminado —</option>'}${opts(it.insumoId)}</select></td>
+    <td class="n"><input type="number" step="0.001" min="0" data-item="${k}" data-f="cant" value="${it.cant}"></td>
+    <td data-o="iu-${k}"></td>
+    <td class="n" data-o="ic-${k}"></td>
+    <td class="n"><b data-o="it-${k}"></b></td>
+    <td class="n"><span data-o="ip-${k}"></span><span class="minibar"><b data-o="ib-${k}" style="width:0"></b></span></td>
+    <td><button class="btn x" data-act="delItem" data-k="${k}" title="Quitar ingrediente">✕</button></td></tr>`).join('');
+  $('#recetas').innerHTML=`<div class="card">${sel}</div>
+  <div class="grid2">
+    <div class="card"><h2>Ficha técnica por porción</h2><p class="hint">Cantidades netas por porción (lo que va al plato). El costo ya incluye la merma del insumo.</p>
+      <div class="fields">
+        <label>Nombre del plato<input class="wide" data-rec="nombre" value="${esc(r.nombre)}"></label>
+        <label><span data-o="lblP"></span><input type="number" step="0.1" min="0" data-rec="precio" value="${r.precio}"></label>
+      </div>
+      <div class="tw"><table><thead><tr><th>Ingrediente</th><th class="n">Cantidad</th><th>Unidad</th><th class="n">Costo aprov. unit.</th><th class="n">Costo</th><th class="n">% del costo</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7" class="muted">Sin ingredientes.</td></tr>'}</tbody>
+      <tfoot><tr><td colspan="4">Costo total por porción</td><td class="n" data-o="rtot"></td><td class="n">100%</td><td></td></tr></tfoot></table></div>
+      <div style="margin-top:12px"><button class="btn" data-act="addItem" ${S.insumos.length?'':'disabled'}>+ Agregar ingrediente</button></div>
+    </div>
+    <div class="card res"><h2>Resultado</h2>
+      <div class="big" data-o="rfc"></div><div style="text-align:center;margin-bottom:10px" data-o="rest"></div>
+      <div class="line"><span>Costo por porción</span><b data-o="rc"></b></div>
+      <div class="line"><span>Precio neto (sin IGV)</span><b data-o="rn"></b></div>
+      <div class="line"><span>Food cost</span><b data-o="rf"></b></div>
+      <div class="line"><span>Margen bruto</span><b data-o="rm"></b></div>
+      <div class="line"><span data-o="lblS"></span><b data-o="rs"></b></div>
+      <p class="hint" style="margin-top:8px" data-o="rnote"></p>
+    </div>
+  </div>`;
+  updateRecetas();
+}
+function updateRecetas(){
+  const r=curRec();if(!r)return;const m=insMap();
+  const c=costoRec(r,m),n=neto(r),fc=n>0?c/n:0,s=est(fc);
+  r.items.forEach((it,k)=>{const i=m[it.insumoId];const cu=i?aprov(i):0,cl=num(it.cant)*cu,p=c>0?cl/c:0;
+    setO('iu-'+k,i?i.unidad:'—');setO('ic-'+k,money(cu));setO('it-'+k,money(cl));setO('ip-'+k,pct(p));
+    const b=document.querySelector(`[data-o="ib-${k}"]`);if(b)b.style.width=(p*100)+'%';});
+  setO('rtot',money(c));
+  setO('lblP',`Precio de venta (S/ ${S.igv?'con':'sin'} IGV)`);
+  setO('rfc',pct(fc));setH('rest',tag(s));
+  setO('rc',money(c));setO('rn',money(n));setO('rf',pct(fc));
+  setO('rm',`${money(n-c)} (${pct(n>0?(n-c)/n:0)})`);
+  setO('lblS',`Precio sugerido (meta ${nf(num(S.meta),1)}%${S.igv?', con IGV':''})`);
+  setO('rs',money(sug(c)));
+  const dif=sug(c)-num(r.precio);
+  setO('rnote',meta()<=0?'Define una meta mayor a 0.':dif>0.005?`Para llegar a la meta, sube el precio en ${money(dif)} o reduce el costo de la porción.`:`El precio actual cumple la meta con ${money(-dif)} de holgura.`);
+  const o=document.querySelector(`#recSel option[value="${r.id}"]`);if(o)o.textContent=r.nombre||'(sin nombre)';
+}
+
+/* ================== VENTAS Y CONSUMO ================== */
+function renderVentas(){
+  const vrows=S.recetas.map(r=>`<tr><td><b data-o="vn-${r.id}">${esc(r.nombre)}</b></td><td class="n" data-o="vp-${r.id}"></td>
+    <td class="n"><input type="number" step="1" min="0" data-venta="${r.id}" value="${num(S.ventas[r.id])}"></td>
+    <td class="n" data-o="vv-${r.id}"></td><td class="n" data-o="vc-${r.id}"></td></tr>`).join('');
+  const irows=S.insumos.map(i=>{const v=S.inv[i.id]||{};return `<tr><td><b>${esc(i.nombre)}</b></td><td>${esc(i.unidad)}</td>
+    ${['ini','compras','fin'].map(f=>`<td class="n"><input type="number" step="0.01" min="0" data-inv="${i.id}" data-f="${f}" value="${num(v[f])}"></td>`).join('')}
+    <td class="n" data-o="cr-${i.id}"></td><td class="n" data-o="ct-${i.id}"></td><td class="n" data-o="cq-${i.id}"></td><td class="n" data-o="cs-${i.id}"></td><td data-o="ce-${i.id}"></td></tr>`;}).join('');
+  $('#ventas').innerHTML=`<div class="card"><h2>Unidades vendidas por plato</h2><p class="hint">Ventas del periodo (por ejemplo, la semana) que quieres analizar.</p>
+    <div class="tw"><table><thead><tr><th>Plato</th><th class="n">Precio neto</th><th class="n">Unidades vendidas</th><th class="n">Venta neta</th><th class="n">Costo teórico</th></tr></thead>
+    <tbody>${vrows||'<tr><td colspan="5" class="muted">Sin recetas.</td></tr>'}</tbody>
+    <tfoot><tr><td>Total</td><td></td><td class="n" data-o="vtu"></td><td class="n" data-o="vtv"></td><td class="n" data-o="vtc"></td></tr></tfoot></table></div></div>
+  <div class="card"><h2>Consumo real vs teórico por insumo</h2><p class="hint">Consumo real = inventario inicial + compras − inventario final. Consumo teórico = ventas × receta, considerando la merma. Una diferencia positiva es pérdida (se usó más de lo que indican las recetas).</p>
+    <div class="tw"><table><thead><tr><th>Insumo</th><th>Unidad</th><th class="n">Inv. inicial</th><th class="n">Compras</th><th class="n">Inv. final</th><th class="n">Consumo real</th><th class="n">Consumo teórico</th><th class="n">Diferencia (unid.)</th><th class="n">Diferencia (S/)</th><th>Estado</th></tr></thead>
+    <tbody>${irows||'<tr><td colspan="10" class="muted">Sin insumos.</td></tr>'}</tbody>
+    <tfoot><tr><td colspan="5">Total valorizado</td><td class="n" data-o="ctr"></td><td class="n" data-o="ctt"></td><td></td><td class="n" data-o="cts"></td><td data-o="cte"></td></tr></tfoot></table></div></div>`;
+  updateVentas();
+}
+function updateVentas(){
+  const m=insMap();let tu=0,tv=0,tc=0;
+  S.recetas.forEach(r=>{const u=num(S.ventas[r.id]),n=neto(r),c=costoRec(r,m);tu+=u;tv+=u*n;tc+=u*c;
+    setO('vp-'+r.id,money(n));setO('vv-'+r.id,money(u*n));setO('vc-'+r.id,money(u*c));});
+  setO('vtu',nf(tu,0));setO('vtv',money(tv));setO('vtc',money(tc));
+  let R=0,Tt=0,D=0;
+  consumo().forEach(x=>{R+=x.realS;Tt+=x.teoS;D+=x.dS;const id=x.i.id,loss=x.dS>0.005,gain=x.dS<-0.005;
+    setO('cr-'+id,nf(x.real,3));setO('ct-'+id,nf(x.teo,3));
+    setO('cq-'+id,sq(x.dq),'n'+(loss?' neg':''));setO('cs-'+id,smoney(x.dS),'n'+(loss?' neg':''));
+    setH('ce-'+id,loss?'<span class="tag bad">Pérdida</span>':gain?'<span class="tag warn">Sobrante</span>':'<span class="tag ok">Cuadra</span>');
+    if(x.real<0)setH('ce-'+id,'<span class="tag bad">Revisar inventario</span>');});
+  setO('ctr',money(R));setO('ctt',money(Tt));setO('cts',smoney(D),'n'+(D>0.005?' neg':''));
+  setH('cte',D>0.005?'<span class="tag bad">Pérdida neta</span>':'<span class="tag ok">Sin pérdida</span>');
+}
+
+
+/* ================== SUPABASE: CONEXIÓN ================== */
+const ENV=window.ENV||{};
+let sb=null;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function setStatus(s,msg){const el=$('#st');if(!el)return;
+  const T={ok:'✓ Guardado',pend:'• Cambios por guardar',saving:'Guardando…',loading:'Cargando…',err:'⚠ Error al guardar'};
+  el.textContent=T[s]||s;el.className='st'+(s==='err'?' err':'');el.title=msg||'';}
+
+/* Preferencias de interfaz (pestaña y receta seleccionada) solo en este navegador */
+function uiSave(){try{localStorage.setItem('foodcost.ui',JSON.stringify({tab:S.tab,sel:S.sel}));}catch(e){}}
+function uiLoad(){try{const o=JSON.parse(localStorage.getItem('foodcost.ui')||'{}');if(o.tab)S.tab=o.tab;if(o.sel)S.sel=o.sel;}catch(e){}}
+
+/* ================== SUPABASE: LECTURA ================== */
+async function loadAll(){
+  setStatus('loading');
+  const res=await Promise.all([
+    sb.from('config').select('*').eq('id',1).maybeSingle(),
+    sb.from('insumos').select('*').order('pos'),
+    sb.from('recetas').select('*').order('pos'),
+    sb.from('receta_items').select('*').order('orden'),
+    sb.from('ventas').select('*'),
+    sb.from('inventario').select('*')]);
+  const bad=res.find(x=>x.error);if(bad)throw bad.error;
+  const [c,ins,rec,items,ven,inv]=res.map(x=>x.data);
+  S.meta=c?num(c.meta):30;S.igv=c?!!c.igv:true;if(!c)qConfig();
+  S.insumos=ins.map(i=>({id:i.id,nombre:i.nombre,unidad:i.unidad,costo:num(i.costo),merma:num(i.merma)}));
+  S.recetas=rec.map(r=>({id:r.id,nombre:r.nombre,precio:num(r.precio),
+    items:items.filter(it=>it.receta_id===r.id).map(it=>({id:it.id,insumoId:it.insumo_id,cant:num(it.cant)}))}));
+  S.ventas={};ven.forEach(v=>S.ventas[v.receta_id]=num(v.unidades));
+  S.inv={};inv.forEach(v=>S.inv[v.insumo_id]={ini:num(v.ini),compras:num(v.compras),fin:num(v.fin)});
+  setStatus(Q.size?'pend':'ok');
+}
+
+/* ================== SUPABASE: GUARDADO AUTOMÁTICO ==================
+   Cada edición se agrega a una cola y se guarda 0,6 s después de la última tecla
+   (así se puede escribir sin interrupciones). */
+const Q=new Map();let timer=null,saving=false;
+const ORDER=['config','insumos','recetas','receta_items','ventas','inventario'];
+const PK={config:'id',insumos:'id',recetas:'id',receta_items:'id',ventas:'receta_id',inventario:'insumo_id'};
+function q(table,row){const k=table+':'+row[PK[table]];Q.set(k,{table,row,k});setStatus('pend');clearTimeout(timer);timer=setTimeout(flush,600);}
+async function flush(){
+  if(saving){clearTimeout(timer);timer=setTimeout(flush,300);return;}
+  if(!Q.size){setStatus('ok');return;}
+  saving=true;setStatus('saving');
+  const batch=[...Q.values()];Q.clear();
+  try{
+    for(const t of ORDER){const rows=batch.filter(x=>x.table===t).map(x=>x.row);
+      if(rows.length){const {error}=await sb.from(t).upsert(rows,{onConflict:PK[t]});if(error)throw error;}}
+    setStatus(Q.size?'pend':'ok');
+  }catch(e){
+    console.error(e);batch.forEach(x=>{if(!Q.has(x.k))Q.set(x.k,x);});
+    setStatus('err',e.message||String(e));clearTimeout(timer);timer=setTimeout(flush,5000);
+  }finally{saving=false;}
+}
+async function idle(){clearTimeout(timer);await flush();while(saving)await sleep(100);}
+const qConfig=()=>q('config',{id:1,meta:num(S.meta),igv:!!S.igv,updated_at:new Date().toISOString()});
+const qIns=i=>q('insumos',{id:i.id,nombre:i.nombre,unidad:i.unidad,costo:num(i.costo),merma:num(i.merma)});
+const qRec=r=>q('recetas',{id:r.id,nombre:r.nombre,precio:num(r.precio)});
+const qItem=(r,it)=>q('receta_items',{id:it.id,receta_id:r.id,insumo_id:it.insumoId,cant:num(it.cant),orden:r.items.indexOf(it)});
+const qVenta=rid=>q('ventas',{receta_id:rid,unidades:num(S.ventas[rid])});
+const qInv=iid=>{const v=S.inv[iid]||{};q('inventario',{insumo_id:iid,ini:num(v.ini),compras:num(v.compras),fin:num(v.fin)});};
+async function del(table,id,drop){
+  for(const [k,x] of Q)if(drop(x))Q.delete(k);
+  while(saving)await sleep(100);
+  setStatus('saving');
+  const {error}=await sb.from(table).delete().eq(PK[table],id);
+  if(error){setStatus('err',error.message);alert('No se pudo eliminar: '+error.message);}else setStatus(Q.size?'pend':'ok');
+}
+
+/* ================== DATOS DE EJEMPLO EN LA BASE ================== */
+async function seed(reset){return writeAll(ejemplo(),reset,'cargar los datos de ejemplo');}
+/* Normaliza un respaldo JSON (de esta versión o de la versión local anterior) */
+function normalizar(o){
+  if(!o||!Array.isArray(o.insumos)||!Array.isArray(o.recetas))throw new Error('El archivo no es un respaldo válido de Food Cost.');
+  const isU=x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(x||''));
+  const M={},id=k=>isU(k)?k:(M[k]||(M[k]=uid()));
+  const e={meta:num(o.meta)||30,igv:o.igv!==false,insumos:[],recetas:[],ventas:{},inv:{}};
+  o.insumos.forEach(i=>e.insumos.push({id:id(i.id),nombre:String(i.nombre??''),unidad:String(i.unidad||'kg'),costo:num(i.costo),merma:num(i.merma)}));
+  const ok=new Set(e.insumos.map(i=>i.id));
+  o.recetas.forEach(r=>e.recetas.push({id:id(r.id),nombre:String(r.nombre??''),precio:num(r.precio),
+    items:(r.items||[]).map(it=>({id:isU(it.id)?it.id:uid(),insumoId:id(it.insumoId),cant:num(it.cant)})).filter(it=>ok.has(it.insumoId))}));
+  const okR=new Set(e.recetas.map(r=>r.id));
+  Object.entries(o.ventas||{}).forEach(([k,v])=>{const r=id(k);if(okR.has(r))e.ventas[r]=num(v);});
+  Object.entries(o.inv||{}).forEach(([k,v])=>{const i=id(k);if(ok.has(i))e.inv[i]={ini:num(v&&v.ini),compras:num(v&&v.compras),fin:num(v&&v.fin)};});
+  return e;
+}
+function exportar(){
+  const data={app:'food-cost',version:2,exportado:new Date().toISOString(),meta:S.meta,igv:S.igv,insumos:S.insumos,recetas:S.recetas,ventas:S.ventas,inv:S.inv};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='food-cost-respaldo-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function writeAll(e,reset,accion){
+  setStatus('saving');await idle();Q.clear();
+  try{
+    if(reset){
+      for(const t of ['insumos','recetas']){const {error}=await sb.from(t).delete().not('id','is',null);if(error)throw error;}
+    }
+    const steps=[
+      ['config',[{id:1,meta:e.meta,igv:e.igv,updated_at:new Date().toISOString()}],'upsert'],
+      ['insumos',e.insumos.map(i=>({id:i.id,nombre:i.nombre,unidad:i.unidad,costo:i.costo,merma:i.merma}))],
+      ['recetas',e.recetas.map(r=>({id:r.id,nombre:r.nombre,precio:r.precio}))],
+      ['receta_items',e.recetas.flatMap(r=>r.items.map((it,k)=>({id:it.id,receta_id:r.id,insumo_id:it.insumoId,cant:it.cant,orden:k})))],
+      ['ventas',Object.entries(e.ventas).map(([receta_id,unidades])=>({receta_id,unidades}))],
+      ['inventario',Object.entries(e.inv).map(([insumo_id,v])=>({insumo_id,...v}))]];
+    for(const [t,rows,mode] of steps){const {error}=mode==='upsert'?await sb.from(t).upsert(rows):await sb.from(t).insert(rows);if(error)throw error;}
+    await loadAll();S.sel=null;renderAll();
+  }catch(err){console.error(err);setStatus('err',err.message);alert('Error al '+accion+': '+err.message);}
+}
+
+/* ================== NAVEGACIÓN Y EVENTOS ================== */
+const R={resumen:renderResumen,insumos:renderInsumos,recetas:renderRecetas,ventas:renderVentas};
+const U={resumen:renderResumen,insumos:updateInsumos,recetas:updateRecetas,ventas:updateVentas};
+function show(tab){S.tab=R[tab]?tab:'resumen';document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab));
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===S.tab));R[S.tab]();uiSave();}
+function changed(){U[S.tab]();}
+function renderAll(){$('#meta').value=S.meta;$('#igv').checked=!!S.igv;show(S.tab);}
+
+document.addEventListener('input',e=>{
+  const t=e.target,d=t.dataset;
+  if(t.id==='meta'){S.meta=num(t.value);qConfig();return changed();}
+  if(t.id==='igv'||t.id==='recSel'||!sb)return;
+  if(d.ins){const i=S.insumos.find(x=>x.id===d.ins);if(!i)return;i[d.f]=(d.f==='nombre'||d.f==='unidad')?t.value:num(t.value);qIns(i);return changed();}
+  if(d.rec){const r=curRec();if(!r)return;r[d.rec]=d.rec==='nombre'?t.value:num(t.value);qRec(r);return changed();}
+  if(d.item!==undefined){const r=curRec();const it=r&&r.items[+d.item];if(!it)return;it[d.f]=d.f==='cant'?num(t.value):t.value;qItem(r,it);return changed();}
+  if(d.venta){S.ventas[d.venta]=num(t.value);qVenta(d.venta);return changed();}
+  if(d.inv){(S.inv[d.inv]=S.inv[d.inv]||{})[d.f]=num(t.value);qInv(d.inv);return changed();}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='igv'){S.igv=t.checked;qConfig();changed();}
+  else if(t.id==='impFile'&&t.files&&t.files[0]){
+    t.files[0].text().then(txt=>{let e;try{e=normalizar(JSON.parse(txt));}catch(err){alert('No se pudo leer el archivo: '+err.message);return;}
+      if(confirm(`Se reemplazarán TODOS los datos actuales por el respaldo (${e.insumos.length} insumos, ${e.recetas.length} recetas).\nTe recomendamos exportar antes un respaldo de lo actual. ¿Continuar?`))writeAll(e,true,'importar el respaldo');});}
+  else if(t.id==='recSel'){S.sel=t.value;uiSave();renderRecetas();}
+});
+document.addEventListener('click',async e=>{
+  const tb=e.target.closest('nav.tabs button');if(tb){show(tb.dataset.tab);return;}
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='seed'){b.disabled=true;await seed(false);}
+  else if(a==='reset'){if(confirm('¿Borrar TODOS los datos de la base y cargar el ejemplo inicial?\nEsta acción no se puede deshacer.'))await seed(true);}
+  else if(a==='export'){await idle();exportar();}
+  else if(a==='import'){$('#impFile').value='';$('#impFile').click();}
+  else if(a==='reload'){await idle();try{await loadAll();renderAll();}catch(err){setStatus('err',err.message);}}
+  else if(a==='logout'){await idle();await sb.auth.signOut();}
+  else if(a==='addIns'){const i={id:uid(),nombre:'Nuevo insumo',unidad:'kg',costo:0,merma:0};S.insumos.push(i);qIns(i);renderInsumos();
+    const el=document.querySelector(`[data-ins="${i.id}"][data-f="nombre"]`);if(el){el.focus();el.select();}}
+  else if(a==='delIns'){const id=b.dataset.id,i=S.insumos.find(x=>x.id===id),n=usos(id);
+    if(!confirm(`¿Eliminar "${i?i.nombre:''}"?`+(n?`\nSe quitará de ${n} receta(s).`:'')))return;
+    S.insumos=S.insumos.filter(x=>x.id!==id);S.recetas.forEach(r=>r.items=r.items.filter(it=>it.insumoId!==id));delete S.inv[id];renderInsumos();
+    await del('insumos',id,x=>(x.table==='insumos'&&x.row.id===id)||(x.table==='receta_items'&&x.row.insumo_id===id)||(x.table==='inventario'&&x.row.insumo_id===id));}
+  else if(a==='addRec'){const r={id:uid(),nombre:'Nuevo plato',precio:0,items:[]};S.recetas.push(r);S.ventas[r.id]=0;S.sel=r.id;qRec(r);qVenta(r.id);uiSave();renderRecetas();
+    const el=document.querySelector('[data-rec="nombre"]');if(el){el.focus();el.select();}}
+  else if(a==='delRec'){const r=curRec();if(!r||!confirm(`¿Eliminar la receta "${r.nombre}"?`))return;
+    S.recetas=S.recetas.filter(x=>x.id!==r.id);delete S.ventas[r.id];S.sel=S.recetas[0]?S.recetas[0].id:null;uiSave();renderRecetas();
+    await del('recetas',r.id,x=>(x.table==='recetas'&&x.row.id===r.id)||(x.table==='receta_items'&&x.row.receta_id===r.id)||(x.table==='ventas'&&x.row.receta_id===r.id));}
+  else if(a==='addItem'){const r=curRec();if(!r||!S.insumos.length)return;const used=new Set(r.items.map(i=>i.insumoId));
+    const ins=S.insumos.find(i=>!used.has(i.id))||S.insumos[0];const it={id:uid(),insumoId:ins.id,cant:0};r.items.push(it);qItem(r,it);renderRecetas();
+    const el=document.querySelector(`[data-item="${r.items.length-1}"][data-f="cant"]`);if(el)el.focus();}
+  else if(a==='delItem'){const r=curRec();if(!r)return;const it=r.items[+b.dataset.k];if(!it)return;r.items.splice(+b.dataset.k,1);renderRecetas();
+    await del('receta_items',it.id,x=>x.table==='receta_items'&&x.row.id===it.id);}
+});
+window.addEventListener('beforeunload',e=>{if(Q.size||saving){flush();e.preventDefault();e.returnValue='';}});
+
+/* ================== INICIO DE SESIÓN ================== */
+function showLogin(msg){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lMsg').textContent=msg||'';}
+async function start(session){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#uMail').textContent=session.user.email||'';
+  uiLoad();
+  try{await loadAll();renderAll();}
+  catch(err){console.error(err);setStatus('err',err.message);
+    $('#resumen').innerHTML=`<div class="alert bad"><div class="ic">⚠️</div><div><b>No se pudieron leer los datos.</b><br>${esc(err.message||err)}<br>Revisa que hayas ejecutado <code>schema.sql</code> en Supabase.</div></div>`;show('resumen');}
+}
+$('#loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();const btn=$('#lBtn');btn.disabled=true;$('#lMsg').textContent='';
+  const {error}=await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(),password:$('#lPass').value});
+  btn.disabled=false;if(error)$('#lMsg').textContent=error.message==='Invalid login credentials'?'Correo o contraseña incorrectos.':error.message;
+});
+(async function init(){
+  if(!window.supabase||!ENV.SUPABASE_URL||!ENV.SUPABASE_ANON_KEY){
+    showLogin('Falta la configuración de Supabase (config.js). Revisa las variables SUPABASE_URL y SUPABASE_ANON_KEY en Render.');
+    $('#lBtn').disabled=true;return;}
+  sb=window.supabase.createClient(ENV.SUPABASE_URL,ENV.SUPABASE_ANON_KEY);
+  let started=false;
+  sb.auth.onAuthStateChange((ev,session)=>{
+    if(session&&!started){started=true;setTimeout(()=>start(session),0);}
+    else if(!session){started=false;showLogin();}
+  });
+})();
+</script>
+</body>
+</html>
