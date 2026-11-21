@@ -1,7 +1,11 @@
-# Food Cost – Supabase + Render
+# Food Cost – Supabase + GitHub Pages
 
 App web para el control de food cost de un restaurante (S/, IGV 18%).
-Los datos se guardan en **Supabase** (PostgreSQL) y la web se publica como **Static Site en Render**.
+Los datos se guardan en **Supabase** (PostgreSQL).
+
+**Publicada en:** https://andrecj97.github.io/food-cost/
+Cada cambio que se sube a la rama `main` se publica solo (GitHub Actions → `.github/workflows/pages.yml`).
+También es compatible con Render (Static Site, build `bash build.sh`, carpeta `public`) si algún día se registra una tarjeta allí.
 
 ## Estructura
 
