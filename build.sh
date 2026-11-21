@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Genera public/config.js con las variables de entorno definidas en Render.
+# Si Render define SUPABASE_URL y SUPABASE_ANON_KEY, regenera public/config.js.
+# Si no, se usa el public/config.js incluido en el repositorio.
 set -euo pipefail
-: "${SUPABASE_URL:?Falta la variable de entorno SUPABASE_URL}"
-: "${SUPABASE_ANON_KEY:?Falta la variable de entorno SUPABASE_ANON_KEY}"
-cat > public/config.js <<CFG
+if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_ANON_KEY:-}" ]]; then
+  cat > public/config.js <<CFG
 window.ENV = { SUPABASE_URL: "${SUPABASE_URL}", SUPABASE_ANON_KEY: "${SUPABASE_ANON_KEY}" };
 CFG
-echo "public/config.js generado correctamente"
+  echo "public/config.js generado desde variables de entorno"
+else
+  echo "Usando public/config.js del repositorio"
+fi
